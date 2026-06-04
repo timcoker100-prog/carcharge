@@ -6,7 +6,6 @@ import './styles.css';
 import { cars, providers, chargers } from './sampleData.js';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-console.log(import.meta.env.VITE_MAPBOX_TOKEN);
 const STORAGE_KEY = 'carcharge-preferences-v1';
 const OPERATOR_NAMES = {
   3: 'Tesco',
@@ -56,6 +55,7 @@ function speedLabel(maxKw) {
 function App() {
   const mapRef = useRef(null);
 const markersRef = useRef([]);
+const locationMarkerRef = useRef(null);
   
 useEffect(() => {
 const map = new mapboxgl.Map({
@@ -288,6 +288,49 @@ function toggleFavourite(chargerId) {
     });
   }
 }
+function providerDisplayName(providerId) {
+  const liveProvider = convertedLiveChargers.find(
+    (charger) => charger.providerId === providerId
+  );
+
+  if (liveProvider) return liveProvider.providerName;
+
+  const savedProvider = providers.find(
+    (provider) => provider.id === providerId
+  );
+
+  return savedProvider?.name || providerId;
+}
+function useMyLocation() {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      setSearchCoords({ lat, lng });
+      setSearchPlace('My location');
+      if (locationMarkerRef.current) {
+  locationMarkerRef.current.remove();
+}
+
+locationMarkerRef.current = new mapboxgl.Marker({
+  color: '#e63946'
+})
+  .setLngLat([lng, lat])
+  .addTo(mapRef.current);
+
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [lng, lat],
+          zoom: 11
+        });
+      }
+    },
+    () => {
+      alert('Could not get your location.');
+    }
+  );
+}
   return (
     <main className="app-shell">
       <header className="hero">
@@ -308,6 +351,12 @@ function toggleFavourite(chargerId) {
             <input value={searchPlace} onChange={(event) => setSearchPlace(event.target.value)} />
           <button type="button" onClick={searchLocation}>
   Search this area
+</button>
+<button
+  type="button"
+  onClick={useMyLocation}
+>
+  📍 Search near me
 </button>
           </label>
           <label>
@@ -436,23 +485,16 @@ function toggleFavourite(chargerId) {
 
 <div className="selected-providers">
   <strong>Selected providers:</strong>
-  <p>
-  {[
-    ...new Set([
-      ...providers
-        .filter((provider) =>
-          preferences.selectedProviders.includes(provider.id)
-        )
-        .map((provider) => provider.name),
 
-      ...liveChargers
-        .filter((charger) =>
-          preferences.selectedProviders.includes(charger.providerId)
-        )
-        .map((charger) => charger.providerName)
-    ])
-  ].join(', ') || 'None selected'}
-</p>
+  {preferences.selectedProviders.length === 0 ? (
+    <p>None selected</p>
+  ) : (
+    <p>
+      {preferences.selectedProviders
+        .map((providerId) => providerDisplayName(providerId))
+        .join(', ')}
+    </p>
+  )}
 </div>
 </aside>
 

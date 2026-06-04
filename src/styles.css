@@ -160,3 +160,19 @@ input, select {
   margin-top: -6px;
   margin-bottom: 12px;
 }
+.selected-provider-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.selected-provider-pill {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #e0f2fe;
+  color: #075985;
+  cursor: pointer;
+  font-weight: 600;
+}
