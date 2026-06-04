@@ -6,7 +6,7 @@ import './styles.css';
 import { cars, providers, chargers } from './sampleData.js';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-
+console.log(import.meta.env.VITE_MAPBOX_TOKEN);
 const STORAGE_KEY = 'carcharge-preferences-v1';
 const OPERATOR_NAMES = {
   3: 'Tesco',
