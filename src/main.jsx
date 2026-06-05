@@ -73,6 +73,8 @@ mapRef.current = map;
   return () => map.remove();
 }, []);
   const [preferences, setPreferences] = useState(loadPreferences);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [searchPlace, setSearchPlace] = useState('Napton');
   const [manualProvider, setManualProvider] = useState('');
   const [allOperators, setAllOperators] = useState([]);
@@ -402,65 +404,108 @@ locationMarkerRef.current = new mapboxgl.Marker({
     }
   );
 }
+  
+    if (showInstructions) {
   return (
-    <main className="app-shell">
-      <header className="hero">
+    <main className="instructions-page">
+      <button
+        type="button"
+        className="back-button"
+        onClick={() => {
+  setShowInstructions(false);
+  setTimeout(() => window.location.reload(), 50);
+}}
+      >
+        ← Back to Charger Search
+      </button>
+
+      <section className="instructions-card">
+        <h1>CarCharge Instructions</h1>onClick={() => {
+  setShowInstructions(false);
+  setTimeout(() => window.location.reload(), 50);
+}}
+
+        <h2>1. Search an area</h2>
+        <p>
+          Enter a town, village or postcode and click
+          "Search this area".
+        </p>
+
+        <h2>2. Use your current location</h2>
+        <p>
+          Click "Search near me" to find chargers close to your current
+          position.
+        </p>
+
+        <h2>3. Select your car</h2>
+        <p>
+          Choose your vehicle from the list. CarCharge automatically
+          filters chargers to those compatible with your car.
+        </p>
+
+        <h2>4. Filter chargers</h2>
+        <ul>
+          <li>Select a minimum charging speed.</li>
+          <li>Show only contactless chargers if preferred.</li>
+          <li>Avoid networks that require their own app.</li>
+          <li>Filter by charging scheme.</li>
+        </ul>
+
+        <h2>5. Save preferred charging networks</h2>
+        <p>
+          Tick providers in the provider list or click
+          "Prefer [provider]" on a charger card.
+        </p>
+
+        <p>
+          Preferred networks are saved automatically on your device.
+        </p>
+
+        <h2>6. Show only preferred networks</h2>
+        <p>
+          Tick "Show only my preferred providers" to display only
+          chargers operated by your saved networks.
+        </p>
+
+        <h2>7. Save favourite chargers</h2>
+        <p>
+          Click "Favourite this charger" to save chargers you use
+          regularly.
+        </p>
+
+        <h2>8. Navigation</h2>
+        <p>
+          Use the Navigate button for directions or the Zapmap button
+          to open the charger in Zapmap.
+        </p>
+
+        <h2>9. Automatic saving</h2>
+        <p>
+          Your preferences, preferred networks and favourites are
+          stored automatically on your device and will be remembered
+          next time you visit.
+        </p>
+      </section>
+    </main>
+  );
+}
+if (showFilters) {
+  return (
+    <main className="instructions-page">
+      <button
+        type="button"
+        className="back-button"
+        onClick={() => {
+          setShowFilters(false);
+          setTimeout(() => window.location.reload(), 50);
+        }}
+      >
+        ← Back to Map
+      </button>
+
+      <section className="instructions-card">
         <div>
-          <p className="eyebrow">CarCharge</p>
-          <h1>Find chargers that suit your car.</h1>
-          <p>
-            Search an area, apply your saved car and provider preferences, and see compatible EV chargers.
-          </p>
-        </div>
-      </header>
-
-      <section className="layout">
-        <aside className="panel">
-          <h2>Search</h2>
-          <label>
-            Place or postcode
-            <input value={searchPlace} onChange={(event) => setSearchPlace(event.target.value)} />
-          <button type="button" onClick={searchLocation}>
-  Search this area
-</button>
-<button
-  type="button"
-  onClick={useMyLocation}
->
-  📍 Search near me
-</button>
-          </label>
-          <label>
-            Radius
-            <select
-              value={preferences.radiusMiles}
-              onChange={(event) => updatePreference('radiusMiles', Number(event.target.value))}
-            >
-              {[5, 10, 25, 50].map((radius) => (
-                <option key={radius} value={radius}>{radius} miles</option>
-              ))}
-            </select>
-          </label>
-
-          <h2>My car</h2>
-
-<div className="car-summary">
-  <strong>Volvo EX30</strong>
-  <p>Type 2 AC · CCS DC · AC 11 kW · DC 153 kW</p>
-</div>
-
-<label>
-  Charging plugs to include
-  <select
-    value={preferences.connectorFilter || 'both'}
-    onChange={(event) => updatePreference('connectorFilter', event.target.value)}
-  >
-    <option value="both">Type 2 AC and CCS DC</option>
-    <option value="ccs">CCS DC only</option>
-    <option value="type2">Type 2 AC only</option>
-  </select>
-</label>
-          <h2>Filters</h2>
+  <h2>Filters</h2>
           <label>
             Minimum charger speed
             <select
@@ -553,9 +598,12 @@ locationMarkerRef.current = new mapboxgl.Marker({
     Clear all
   </button>
 </div>
+</div>
 
-<div className="provider-list">
-  {(providerSearch.trim() ? allOperators : providers)
+
+ {providerSearch.trim() && (
+  <div className="provider-list">
+    {(providerSearch.trim() ? allOperators : providers)
     .filter((provider) =>
       provider.name.toLowerCase().includes(providerSearch.toLowerCase())
     )
@@ -573,8 +621,122 @@ onChange={() => toggleProvider(String(provider.id))}
       </label>
     ))}
 </div>
+ )}
+      </section>
+    </main>
+  );
+}
+    return (
+    <main className="app-shell">
+      <header className="app-header">
+  <div>
+    <h1>CarCharge</h1>
+    <p>
+      Search an area, apply your saved car and provider preferences,
+      and see compatible EV chargers.
+    </p>
+    <button
+  type="button"
+  className="instructions-button"
+  onClick={() => setShowInstructions(true)}
+>
+  Instructions
+</button>
+  </div>
+
+  </header>
+
+      <section className="layout">
+        <aside className="panel">
  
-<div className="selected-providers">
+
+          <h2>My car</h2>
+
+<div className="car-summary">
+  <strong>Volvo EX30</strong>
+  <p>Type 2 AC · CCS DC · AC 11 kW · DC 153 kW</p>
+</div>
+
+<label>
+  Charging plugs to include
+  <select
+    value={preferences.connectorFilter || 'both'}
+    onChange={(event) => updatePreference('connectorFilter', event.target.value)}
+  >
+    <option value="both">Type 2 AC and CCS DC</option>
+    <option value="ccs">CCS DC only</option>
+    <option value="type2">Type 2 AC only</option>
+  </select>
+</label>
+         
+ 
+
+</aside>
+       <section className="results-area">
+<div className="top-action-buttons">
+  <button
+    type="button"
+    className="instructions-button"
+    onClick={() => setShowFilters(true)}
+  >
+    Filters & Providers
+  </button>
+
+  <button
+    type="button"
+    className="instructions-button"
+    onClick={() => setShowInstructions(true)}
+  >
+    Instructions
+  </button>
+</div>
+<div className="map-placeholder">
+  <h2>Map view</h2>
+
+  <div
+  id="map"
+  style={{
+    width: "900px",
+    maxWidth: "100%",
+    height: "650px",
+    borderRadius: "12px",
+    overflow: "hidden"
+  }}
+/>
+</div>
+           <div className="search-under-map">
+            <h2>Search</h2>
+          <label>
+            Place or postcode
+            <input
+  value={searchPlace}
+  onChange={(event) => setSearchPlace(event.target.value)}
+/>
+</label>
+<button type="button" onClick={searchLocation}>
+  Search this area
+</button>
+<button
+  type="button"
+  onClick={useMyLocation}
+>
+  📍 Search near me
+</button>
+          <label>
+            Radius
+            <select
+              value={preferences.radiusMiles}
+              onChange={(event) => updatePreference('radiusMiles', Number(event.target.value))}
+            >
+              {[5, 10, 25, 50].map((radius) => (
+                <option key={radius} value={radius}>{radius} miles</option>
+              ))}
+            </select>
+          </label>
+
+</div>
+
+    <div className="selected-providers">
   <strong>Preferred networks:</strong>
 
   {preferences.selectedProviders.length === 0 ? (
@@ -594,23 +756,6 @@ onChange={() => toggleProvider(String(provider.id))}
     </div>
   )}
 </div>
-</aside>
-        <section className="results-area">
-<div className="map-placeholder">
-  <h2>Map view</h2>
-
-  <div
-  id="map"
-  style={{
-    width: "900px",
-    maxWidth: "100%",
-    height: "650px",
-    borderRadius: "12px",
-    overflow: "hidden"
-  }}
-/>
-</div>
-
           <div className="results-header">
             <h2>{filteredChargers.length} matching chargers near {searchPlace}</h2>
             <p>Your choices are saved automatically on this device.</p>
