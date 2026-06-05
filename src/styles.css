@@ -443,5 +443,11 @@ body {
     max-height: 260px;
     overflow-y: auto;
   }
-  }
+  }.search-under-map {
+  display: block;
+  background: white;
+  border-radius: 16px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
 
