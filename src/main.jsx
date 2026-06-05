@@ -74,6 +74,9 @@ mapRef.current = map;
 }, []);
   const [preferences, setPreferences] = useState(loadPreferences);
   const [searchPlace, setSearchPlace] = useState('Napton');
+  const [manualProvider, setManualProvider] = useState('');
+  const [allOperators, setAllOperators] = useState([]);
+const [operatorSearch, setOperatorSearch] = useState('');
   const [searchCoords, setSearchCoords] = useState({ lat: 52.25, lng: -1.38 });
 const [providerSearch, setProviderSearch] = useState('');
 const [liveChargers, setLiveChargers] = useState([]);
@@ -245,13 +248,16 @@ useEffect(() => {
   }
 
   function toggleProvider(providerId) {
-    setPreferences((current) => {
-      const selected = current.selectedProviders.includes(providerId)
-        ? current.selectedProviders.filter((id) => id !== providerId)
-        : [...current.selectedProviders, providerId];
-      return { ...current, selectedProviders: selected };
-    });
-  }
+  const id = String(providerId);
+
+  setPreferences((current) => {
+    const selected = current.selectedProviders.map(String).includes(id)
+      ? current.selectedProviders.filter((savedId) => String(savedId) !== id)
+      : [...current.selectedProviders.map(String), id];
+
+    return { ...current, selectedProviders: selected };
+  });
+}
 function toggleFavourite(chargerId) {
   setFavourites((current) => {
     const next = current.includes(chargerId)
@@ -288,20 +294,85 @@ function toggleFavourite(chargerId) {
     });
   }
 }
+
+
+function addManualProvider() {
+  const name = manualProvider.trim();
+  if (!name) return;
+
+  const providerId = name.toLowerCase().replaceAll(' ', '-');
+
+  if (!preferences.selectedProviders.includes(providerId)) {
+    updatePreference('selectedProviders', [
+      ...preferences.selectedProviders,
+      providerId
+    ]);
+  }
+
+  setManualProvider('');
+}
 function providerDisplayName(providerId) {
   const liveProvider = convertedLiveChargers.find(
-    (charger) => charger.providerId === providerId
+    (charger) => String(charger.providerId) === String(providerId)
   );
 
   if (liveProvider) return liveProvider.providerName;
 
   const savedProvider = providers.find(
-    (provider) => provider.id === providerId
+    (provider) => String(provider.id) === String(providerId)
   );
 
-  return savedProvider?.name || providerId;
+  if (savedProvider) return savedProvider.name;
+
+  const savedOperator = allOperators.find(
+    (operator) => String(operator.id) === String(providerId)
+  );
+
+  return savedOperator?.name || providerId;
+}
+useEffect(() => {
+  async function fetchOperators() {
+  try {
+    const url =
+      `https://api.openchargemap.io/v3/referencedata/?key=${import.meta.env.VITE_OPENCHARGEMAP_KEY}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    console.log('Referencedata:', data);
+
+    const operators = data.Operators || [];
+
+    setAllOperators(
+      operators
+        .filter((operator) => operator.Title)
+        .map((operator) => ({
+          id: String(operator.ID),
+          name: operator.Title
+        }))
+    );
+
+    console.log('Operator count:', operators.length);
+  } catch (error) {
+    console.error('Could not load operators:', error);
+  }
+}
+fetchOperators();
+}, []);
+
+
+function addOperatorToPreferred(operator) {
+  if (!preferences.selectedProviders.includes(operator.id)) {
+    updatePreference(
+      'selectedProviders',
+      [...preferences.selectedProviders, operator.id]
+    );
+  }
+
+  setOperatorSearch('');
 }
 function useMyLocation() {
+
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const lat = position.coords.latitude;
@@ -440,12 +511,12 @@ locationMarkerRef.current = new mapboxgl.Marker({
       )
     }
   />
-  Show only my preferred providers
+  Only show my preferred networks
 </label>
 
 <h2>Providers</h2>
    <p className="helper-text">
-  Save networks you trust. Tick “Show only my preferred providers” to filter to them.
+  Tick the networks you want to include in the results. Use “Preferred network” on a charger card to save networks you like.
 </p>
 
 <label>
@@ -458,46 +529,72 @@ locationMarkerRef.current = new mapboxgl.Marker({
 </label>
 
 <div className="provider-actions">
-  <button onClick={() => updatePreference('selectedProviders', providers.map((p) => p.id))}>
-    Select all shown
-  </button>
+ <button
+  type="button"
+  onClick={() => {
+    const shownProviders = (providerSearch.trim() ? allOperators : providers)
+      .filter((provider) =>
+        provider.name.toLowerCase().includes(providerSearch.toLowerCase())
+      )
+      .slice(0, providerSearch.trim() ? 20 : providers.length)
+      .map((provider) => String(provider.id));
+
+    updatePreference('selectedProviders', [
+      ...new Set([
+        ...preferences.selectedProviders.map(String),
+        ...shownProviders
+      ])
+    ]);
+  }}
+>
+  Select all shown
+</button>
   <button onClick={() => updatePreference('selectedProviders', [])}>
     Clear all
   </button>
 </div>
 
 <div className="provider-list">
-  {providers
+  {(providerSearch.trim() ? allOperators : providers)
     .filter((provider) =>
       provider.name.toLowerCase().includes(providerSearch.toLowerCase())
     )
+    .slice(0, providerSearch.trim() ? 20 : providers.length)
     .map((provider) => (
       <label key={provider.id} className="checkbox-row">
         <input
           type="checkbox"
-          checked={preferences.selectedProviders.includes(provider.id)}
-          onChange={() => toggleProvider(provider.id)}
+          checked={preferences.selectedProviders.some(
+  (id) => String(id) === String(provider.id)
+)}
+onChange={() => toggleProvider(String(provider.id))}
         />
         {provider.name}
       </label>
     ))}
 </div>
-
+ 
 <div className="selected-providers">
-  <strong>Selected providers:</strong>
+  <strong>Preferred networks:</strong>
 
   {preferences.selectedProviders.length === 0 ? (
     <p>None selected</p>
   ) : (
-    <p>
-      {preferences.selectedProviders
-        .map((providerId) => providerDisplayName(providerId))
-        .join(', ')}
-    </p>
+    <div className="selected-provider-chips">
+      {preferences.selectedProviders.map((providerId) => (
+        <button
+          key={providerId}
+          type="button"
+          className="provider-chip"
+          onClick={() => toggleProvider(String(providerId))}
+        >
+          {providerDisplayName(providerId)} ×
+        </button>
+      ))}
+    </div>
   )}
 </div>
 </aside>
-
         <section className="results-area">
 <div className="map-placeholder">
   <h2>Map view</h2>
@@ -585,18 +682,23 @@ locationMarkerRef.current = new mapboxgl.Marker({
   onClick={(event) => {
     event.stopPropagation();
 
-    const alreadySaved = preferences.selectedProviders.includes(charger.providerId);
+    const providerId = String(charger.providerId);
+    const alreadySaved = preferences.selectedProviders.some(
+      (id) => String(id) === providerId
+    );
 
     updatePreference(
       'selectedProviders',
       alreadySaved
-        ? preferences.selectedProviders.filter((id) => id !== charger.providerId)
-        : [...preferences.selectedProviders, charger.providerId]
+        ? preferences.selectedProviders.filter((id) => String(id) !== providerId)
+        : [...preferences.selectedProviders.map(String), providerId]
     );
   }}
 >
-  {preferences.selectedProviders.includes(charger.providerId)
-    ? `✓ Preferred network`
+  {preferences.selectedProviders.some(
+    (id) => String(id) === String(charger.providerId)
+  )
+    ? '✓ Preferred network'
     : `🏢 Prefer ${charger.providerName}`}
 </button>
   </article>
