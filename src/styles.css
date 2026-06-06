@@ -412,42 +412,6 @@ body {
     max-height: 260px;
     overflow-y: auto;
   }
-}
-@media (max-width: 768px) {
-  .layout {
-    display: flex;
-    flex-direction: column;
-  }
 
-  .panel {
-    order: 1;
-  }
-
-  .map-placeholder {
-    order: 2;
-  }
-
-  .selected-providers {
-    order: 3;
-  }
-
-  .results-header {
-    order: 4;
-  }
-
-  .charger-grid {
-    order: 5;
-  }
-
-  .provider-list {
-    max-height: 260px;
-    overflow-y: auto;
-  }
-  }.search-under-map {
-  display: block;
-  background: white;
-  border-radius: 16px;
-  padding: 1rem;
-  margin: 1rem 0;
 }
 

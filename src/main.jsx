@@ -76,6 +76,8 @@ mapRef.current = map;
   const [showInstructions, setShowInstructions] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchPlace, setSearchPlace] = useState('Napton');
+  const [tracking, setTracking] = useState(false);
+const watchIdRef = useRef(null);
   const [manualProvider, setManualProvider] = useState('');
   const [allOperators, setAllOperators] = useState([]);
 const [operatorSearch, setOperatorSearch] = useState('');
@@ -385,7 +387,8 @@ function useMyLocation() {
       if (locationMarkerRef.current) {
   locationMarkerRef.current.remove();
 }
-
+const [tracking, setTracking] = useState(false);
+const watchIdRef = useRef(null);
 locationMarkerRef.current = new mapboxgl.Marker({
   color: '#e63946'
 })
@@ -495,10 +498,7 @@ if (showFilters) {
       <button
         type="button"
         className="back-button"
-        onClick={() => {
-          setShowFilters(false);
-          setTimeout(() => window.location.reload(), 50);
-        }}
+        onClick={() => setShowFilters(false)}
       >
         ← Back to Map
       </button>
@@ -715,6 +715,9 @@ onChange={() => toggleProvider(String(provider.id))}
 </label>
 <button type="button" onClick={searchLocation}>
   Search this area
+</button>
+<button type="button" onClick={toggleLiveTracking}>
+  {tracking ? 'Stop live tracking' : 'Live tracking'}
 </button>
 <button
   type="button"
