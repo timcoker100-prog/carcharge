@@ -382,8 +382,9 @@ function useMyLocation() {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
 
-      setSearchCoords({ lat, lng });
-      setSearchPlace('My location');
+     setSearchCoords({ lat, lng });
+setSearchPlace('Current location');
+setProviderSearch('');
       if (locationMarkerRef.current) {
   locationMarkerRef.current.remove();
 }
