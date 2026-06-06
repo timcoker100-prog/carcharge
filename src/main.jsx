@@ -78,6 +78,8 @@ mapRef.current = map;
   const [searchPlace, setSearchPlace] = useState('Napton');
   const [tracking, setTracking] = useState(false);
 const watchIdRef = useRef(null);
+  const [tracking, setTracking] = useState(false);
+const watchIdRef = useRef(null);
   const [manualProvider, setManualProvider] = useState('');
   const [allOperators, setAllOperators] = useState([]);
 const [operatorSearch, setOperatorSearch] = useState('');
@@ -376,7 +378,34 @@ function addOperatorToPreferred(operator) {
   setOperatorSearch('');
 }
 function toggleLiveTracking() {
-  alert('Live tracking is not set up yet.');
+  if (tracking) {
+    navigator.geolocation.clearWatch(watchIdRef.current);
+    watchIdRef.current = null;
+    setTracking(false);
+    return;
+  }
+
+  const watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      setSearchCoords({ lat, lng });
+      setSearchPlace("Current location");
+    },
+    (error) => {
+      console.error(error);
+      alert("Unable to get live location");
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 10000,
+    }
+  );
+
+  watchIdRef.current = watchId;
+  setTracking(true);
 }
 function useMyLocation() {
 
