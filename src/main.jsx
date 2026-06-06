@@ -375,6 +375,9 @@ function addOperatorToPreferred(operator) {
 
   setOperatorSearch('');
 }
+function toggleLiveTracking() {
+  alert('Live tracking is not set up yet.');
+}
 function useMyLocation() {
 
   navigator.geolocation.getCurrentPosition(
