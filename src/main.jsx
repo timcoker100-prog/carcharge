@@ -781,8 +781,8 @@ onChange={() => toggleProvider(String(provider.id))}
   ref={mapContainerRef}
   id="map"
   style={{
-    width: "900px",
-    minWidth: "900px",
+   width: "100%",
+minWidth: "0",
     height: "650px",
     borderRadius: "12px",
     overflow: "hidden"

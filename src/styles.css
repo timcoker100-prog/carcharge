@@ -412,31 +412,28 @@ body {
     max-height: 260px;
     overflow-y: auto;
   }
-
-}.map-placeholder {
+.map-placeholder {
   width: 100%;
   max-width: 900px;
-}
-.map-placeholder {
-  width: 900px !important;
-  max-width: 900px !important;
-  min-width: 900px !important;
-  flex-shrink: 0 !important;
-  overflow: visible !important;
+  min-width: 0;
+  overflow: hidden;
 }
 
 #map {
-  width: 900px !important;
+  width: 100% !important;
   height: 650px !important;
-  min-width: 900px !important;
+  min-width: 0 !important;
   position: relative !important;
   display: block !important;
 }
 
-#map canvas {
-  width: 900px !important;
-  height: 650px !important;
-}#map {
+#map .mapboxgl-canvas-container,
+#map .mapboxgl-canvas {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+#map {
   background: transparent !important;
 }
 
