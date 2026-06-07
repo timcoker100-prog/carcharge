@@ -448,3 +448,42 @@ body {
   background: transparent !important;
 }
 
+.main-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+.map-placeholder,
+.search-under-map,
+.charger-results {
+  width: 100%;
+  max-width: 900px;
+}
+ 
+
+.map-placeholder {
+  background: transparent !important;
+  width: 100%;
+  max-width: 900px;
+  overflow: hidden;
+}
+
+.search-under-map {
+  max-width: 900px;
+}
+
+.charger-list,
+.results,
+.charger-results {
+  max-width: 900px;
+}
+
+#map {
+  width: 100% !important;
+  max-width: 900px !important;
+}
+
+}
