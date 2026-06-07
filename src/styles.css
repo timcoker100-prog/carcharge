@@ -413,5 +413,28 @@ body {
     overflow-y: auto;
   }
 
+}.map-placeholder {
+  width: 100%;
+  max-width: 900px;
+}
+.map-placeholder {
+  width: 900px !important;
+  max-width: 900px !important;
+  min-width: 900px !important;
+  flex-shrink: 0 !important;
+  overflow: visible !important;
+}
+
+#map {
+  width: 900px !important;
+  height: 650px !important;
+  min-width: 900px !important;
+  position: relative !important;
+  display: block !important;
+}
+
+#map canvas {
+  width: 900px !important;
+  height: 650px !important;
 }
 

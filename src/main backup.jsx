@@ -54,22 +54,34 @@ function speedLabel(maxKw) {
 
 function App() {
   const mapRef = useRef(null);
-  const mapContainerRef = useRef(null);
 const markersRef = useRef([]);
 const locationMarkerRef = useRef(null);
-const liveWatchIdRef = useRef(null);
-const liveMarkerRef = useRef(null);
-const liveTrackingRef = useRef(false);
   
+useEffect(() => {
+const map = new mapboxgl.Map({
+  container: "map",
+  style: "mapbox://styles/mapbox/streets-v12",
+  center: [-1.38, 52.25],
+  zoom: 11
+});
 
+mapRef.current = map;
+
+  setTimeout(() => {
+  map.resize();
+}, 300);
+  return () => map.remove();
+}, []);
   const [preferences, setPreferences] = useState(loadPreferences);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchPlace, setSearchPlace] = useState('Napton');
-   const [tracking, setTracking] = useState(false);
+  const [tracking, setTracking] = useState(false);
+const watchIdRef = useRef(null);
+  const [tracking, setTracking] = useState(false);
 const watchIdRef = useRef(null);
   const [manualProvider, setManualProvider] = useState('');
-   const [allOperators, setAllOperators] = useState([]);
+  const [allOperators, setAllOperators] = useState([]);
 const [operatorSearch, setOperatorSearch] = useState('');
   const [searchCoords, setSearchCoords] = useState({ lat: 52.25, lng: -1.38 });
 const [providerSearch, setProviderSearch] = useState('');
@@ -83,48 +95,8 @@ const [favourites, setFavourites] = useState(() => {
     return [];
   }
 });
-useEffect(() => {
-  if (showFilters || showInstructions) return;
-  if (!mapContainerRef.current) return;
 
-  const map = new mapboxgl.Map({
-    container: mapContainerRef.current,
-    style: "mapbox://styles/mapbox/streets-v12",
-    center: [searchCoords.lng, searchCoords.lat],
-    zoom: 11,
-  });
-
-  mapRef.current = map;
-
-  map.on("load", () => {
-    map.resize();
-  });
-
-  setTimeout(() => {
-    map.resize();
-  }, 300);
-
-  return () => {
-    map.remove();
-    mapRef.current = null;
-  };
-}, [showFilters, showInstructions]);
-
- useEffect(() => {
-  if (!showFilters && !showInstructions && mapRef.current) {
-    setTimeout(() => {
-      mapRef.current.resize();
-
-      if (searchCoords) {
-        mapRef.current.flyTo({
-          center: [searchCoords.lng, searchCoords.lat],
-          zoom: 13,
-        });
-      }
-    }, 300);
-  }
-}, [showFilters, showInstructions, searchCoords]); 
-useEffect(() => {
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
   }, [preferences]);
   useEffect(() => {
@@ -406,11 +378,6 @@ function addOperatorToPreferred(operator) {
   setOperatorSearch('');
 }
 function toggleLiveTracking() {
-  if (!navigator.geolocation) {
-    alert("GPS is not available in this browser.");
-    return;
-  }
-
   if (tracking) {
     navigator.geolocation.clearWatch(watchIdRef.current);
     watchIdRef.current = null;
@@ -425,25 +392,22 @@ function toggleLiveTracking() {
 
       setSearchCoords({ lat, lng });
       setSearchPlace("Current location");
-
       if (locationMarkerRef.current) {
-        locationMarkerRef.current.setLngLat([lng, lat]);
-      } else {
-        locationMarkerRef.current = new mapboxgl.Marker({
-          color: "#e63946",
-        })
-          .setLngLat([lng, lat])
-          .addTo(mapRef.current);
-      }
+  locationMarkerRef.current.remove();
+}
 
-      if (mapRef.current) {
-        mapRef.current.flyTo({
-          center: [lng, lat],
-          zoom: 13,
-        });
-      }
+locationMarkerRef.current = new mapboxgl.Marker({
+  color: '#e63946'
+})
+  .setLngLat([lng, lat])
+  .addTo(mapRef.current);
 
-      findNearbyChargers(lat, lng);
+if (mapRef.current) {
+  mapRef.current.flyTo({
+    center: [lng, lat],
+    zoom: 13
+  });
+}
     },
     (error) => {
       console.error(error);
@@ -472,7 +436,8 @@ setProviderSearch('');
       if (locationMarkerRef.current) {
   locationMarkerRef.current.remove();
 }
-
+const [tracking, setTracking] = useState(false);
+const watchIdRef = useRef(null);
 locationMarkerRef.current = new mapboxgl.Marker({
   color: '#e63946'
 })
@@ -500,7 +465,7 @@ locationMarkerRef.current = new mapboxgl.Marker({
         className="back-button"
         onClick={() => {
   setShowInstructions(false);
-  
+  setTimeout(() => window.location.reload(), 50);
 }}
       >
         ← Back to Charger Search
@@ -509,7 +474,7 @@ locationMarkerRef.current = new mapboxgl.Marker({
       <section className="instructions-card">
         <h1>CarCharge Instructions</h1>onClick={() => {
   setShowInstructions(false);
-  
+  setTimeout(() => window.location.reload(), 50);
 }}
 
         <h2>1. Search an area</h2>
@@ -777,18 +742,16 @@ onChange={() => toggleProvider(String(provider.id))}
 <div className="map-placeholder">
   <h2>Map view</h2>
 
- <div
-  ref={mapContainerRef}
+  <div
   id="map"
   style={{
     width: "900px",
-    minWidth: "900px",
+    maxWidth: "100%",
     height: "650px",
     borderRadius: "12px",
     overflow: "hidden"
   }}
->
-</div>
+/>
 </div>
            <div className="search-under-map">
             <h2>Search</h2>
