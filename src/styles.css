@@ -436,5 +436,18 @@ body {
 #map canvas {
   width: 900px !important;
   height: 650px !important;
+}#map {
+  background: transparent !important;
+}
+
+#map .mapboxgl-canvas-container,
+#map .mapboxgl-canvas {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.map-placeholder {
+  background: transparent !important;
 }
 
