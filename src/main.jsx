@@ -15,6 +15,8 @@ const OPERATOR_NAMES = {
   203: 'Instavolt',
   3392: 'Unknown operator',
   3430: 'Welcome Break',
+  3471: "MFG",
+  5: 'Pod Point',
 };
 
 function loadPreferences() {
@@ -179,6 +181,10 @@ useEffect(() => {
   point.DataProvider?.Title ||
   OPERATOR_NAMES[point.OperatorID] ||
   'Unknown provider';
+  
+  if (point.AddressInfo?.Title?.includes("Colton")) {
+  
+}
   
     const address = point.AddressInfo?.Title || point.AddressInfo?.AddressLine1 || 'Unknown location';
 
