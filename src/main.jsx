@@ -173,8 +173,10 @@ useEffect(() => {
 
  const convertedLiveChargers = useMemo(() => {
   return liveChargers.flatMap((point) => {
-  const operatorName =
+ const operatorName =
   point.OperatorInfo?.Title ||
+  point.OperatorInfo?.WebsiteURL ||
+  point.DataProvider?.Title ||
   OPERATOR_NAMES[point.OperatorID] ||
   'Unknown provider';
   
