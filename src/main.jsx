@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import './styles.css';
 import { cars, providers, chargers } from './sampleData.js';
 
+
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 const STORAGE_KEY = 'carcharge-preferences-v1';
 const OPERATOR_NAMES = {
@@ -52,6 +53,35 @@ function speedLabel(maxKw) {
   if (maxKw >= 50) return 'Rapid';
   if (maxKw >= 22) return 'Fast';
   return 'Slow';
+}
+
+async function geocodeWithHere(query) {
+  const apiKey = import.meta.env.VITE_HERE_API_KEY;
+
+  const url =
+    `https://geocode.search.hereapi.com/v1/geocode` +
+    `?q=${encodeURIComponent(query)}` +
+    `&in=countryCode:GBR` +
+    `&limit=1` +
+    `&apiKey=${apiKey}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`HERE geocode error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.items || data.items.length === 0) {
+    throw new Error('No location found');
+  }
+
+  return {
+    lat: data.items[0].position.lat,
+    lng: data.items[0].position.lng,
+    label: data.items[0].title,
+  };
 }
 
 function App() {
@@ -172,20 +202,18 @@ useEffect(() => {
   const selectedCar = cars.find(
     (car) => car.manufacturer === preferences.manufacturer && car.model === preferences.model
   ) || availableModels[0];
-
- const convertedLiveChargers = useMemo(() => {
+const convertedLiveChargers = useMemo(() => {
   return liveChargers.flatMap((point) => {
- const operatorName =
+ 
+  const matchedOperator = allOperators.find(
+  (operator) => String(operator.id) === String(point.OperatorID)
+);
+
+const operatorName =
   point.OperatorInfo?.Title ||
-  point.OperatorInfo?.WebsiteURL ||
-  point.DataProvider?.Title ||
+  matchedOperator?.name ||
   OPERATOR_NAMES[point.OperatorID] ||
   'Unknown provider';
-  
-  if (point.AddressInfo?.Title?.includes("Colton")) {
-  
-}
-  
     const address = point.AddressInfo?.Title || point.AddressInfo?.AddressLine1 || 'Unknown location';
 
     
@@ -220,12 +248,13 @@ return [{
   connectorTypes,
   maxKw,
   connectionCount: connections.length,
-  availabilityStatus: point.StatusType?.Title || 'Status unknown'
-}];
+     availabilityStatus: point.StatusType?.Title || 'Status unknown'
+     }];
   });
-}, [liveChargers]);
+}, [liveChargers, selectedCar, allOperators]);
 
 const filteredChargers = useMemo(() => {
+  
   
     return convertedLiveChargers.filter((charger) => {
    if (preferences.connectorFilter === 'ccs' && !charger.connectorTypes.includes('CCS')) return false;
@@ -233,11 +262,13 @@ if (preferences.connectorFilter === 'type2' && !charger.connectorTypes.includes(
     if (charger.maxKw < Number(preferences.minimumKw)) return false;
 if (
   preferences.preferredProvidersOnly &&
-  !preferences.selectedProviders.includes(charger.providerId)
-) return false;
+  !preferences.selectedProviders.includes(charger.providerId) &&
+  !favourites.includes(charger.id)
+)
+  return false;
     return true;
   });
-}, [convertedLiveChargers, preferences]);
+}, [convertedLiveChargers, preferences, favourites]);
 useEffect(() => {
   if (!mapRef.current) return;
 
@@ -249,7 +280,15 @@ useEffect(() => {
   filteredChargers.forEach((charger) => {
     if (!charger.latitude || !charger.longitude) return;
 
-    const marker = new mapboxgl.Marker()
+    const isFavourite = favourites.includes(charger.id);
+
+const markerEl = document.createElement('div');
+markerEl.className = isFavourite
+  ? 'charger-marker favourite-marker'
+  : 'charger-marker';
+    const marker = new mapboxgl.Marker({
+  element: markerEl
+})
       .setLngLat([charger.longitude, charger.latitude])
       .setPopup(
         new mapboxgl.Popup().setHTML(
@@ -315,26 +354,21 @@ function toggleFavourite(chargerId) {
   });
 }
   async function searchLocation() {
-  const url =
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchPlace)}.json?` +
-    `country=gb&access_token=${mapboxgl.accessToken}`;
+ const result = await geocodeWithHere(searchPlace);
 
-  const response = await fetch(url);
-  const data = await response.json();
+setSearchCoords({
+  lat: result.lat,
+  lng: result.lng,
+});
 
-  const firstResult = data.features?.[0];
-  if (!firstResult) return;
+setSearchPlace(result.label);
 
-  const [lng, lat] = firstResult.center;
-
-  setSearchCoords({ lat, lng });
-
-  if (mapRef.current) {
-    mapRef.current.flyTo({
-      center: [lng, lat],
-      zoom: 11
-    });
-  }
+if (mapRef.current) {
+  mapRef.current.flyTo({
+    center: [result.lng, result.lat],
+    zoom: 12,
+  });
+}
 }
 
 
@@ -437,11 +471,13 @@ function toggleLiveTracking() {
       if (locationMarkerRef.current) {
         locationMarkerRef.current.setLngLat([lng, lat]);
       } else {
-        locationMarkerRef.current = new mapboxgl.Marker({
-          color: "#e63946",
-        })
-          .setLngLat([lng, lat])
-          .addTo(mapRef.current);
+       const userMarkerEl = document.createElement('div');
+userMarkerEl.className = 'user-location-marker';
+userMarkerEl.innerHTML = '📍';
+
+locationMarkerRef.current = new mapboxgl.Marker(userMarkerEl)
+  .setLngLat([lng, lat])
+  .addTo(mapRef.current);
       }
 
       if (mapRef.current) {
@@ -481,9 +517,12 @@ setProviderSearch('');
   locationMarkerRef.current.remove();
 }
 
-locationMarkerRef.current = new mapboxgl.Marker({
-  color: '#e63946'
-})
+const userMarkerEl = document.createElement('div');
+userMarkerEl.innerHTML = '📍';
+userMarkerEl.style.fontSize = '46px';
+userMarkerEl.style.color = 'red';
+
+locationMarkerRef.current = new mapboxgl.Marker(userMarkerEl)
   .setLngLat([lng, lat])
   .addTo(mapRef.current);
 
@@ -864,7 +903,7 @@ minWidth: "0",
   <article
   id={`charger-${charger.id}`}
   key={charger.id}
-  className="charger-card"
+  className={`charger-card ${favourites.includes(charger.id) ? 'favourite-card' : ''}`}
   onClick={() => {
     if (mapRef.current && charger.latitude && charger.longitude) {
       mapRef.current.flyTo({
@@ -876,7 +915,10 @@ minWidth: "0",
 >
     <div className="charger-title-row">
       <div>
-        <h3>{charger.name}</h3>
+        <h3>
+  {favourites.includes(charger.id) && '⭐ '}
+  {charger.name}
+</h3>
         <p>{charger.providerName} · {charger.address}</p>
               </div>
       <span className={`speed-badge ${speedClass(charger.maxKw)}`}>
