@@ -54,17 +54,26 @@ function speedLabel(maxKw) {
   if (maxKw >= 22) return 'Fast';
   return 'Slow';
 }
+function getAvailabilityClass(status) {
+  const text = (status || '').toLowerCase();
 
+  if (text.includes('available')) return 'available';
+  if (text.includes('occupied') || text.includes('busy') || text.includes('in use')) return 'busy';
+  if (text.includes('offline') || text.includes('out of service') || text.includes('faulted')) return 'offline';
+
+  return 'unknown';
+}
 async function geocodeWithHere(query) {
   const apiKey = import.meta.env.VITE_HERE_API_KEY;
 
-  const url =
-    `https://geocode.search.hereapi.com/v1/geocode` +
-    `?q=${encodeURIComponent(query)}` +
-    `&in=countryCode:GBR` +
-    `&limit=1` +
-    `&apiKey=${apiKey}`;
+ const url =
+  `https://geocode.search.hereapi.com/v1/geocode` +
+  `?q=${encodeURIComponent(query)}` +
+  `&in=countryCode:GBR` +
+  `&limit=1` +
+  `&apiKey=${apiKey}`;
 
+    
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -235,6 +244,10 @@ const connectorTypes = [
   )
 ];
 
+console.log(
+  point.AddressInfo?.Title,
+  point.StatusType?.Title
+);
 return [{
   id: point.ID,
   name: point.AddressInfo?.Title || 'Charging location',
@@ -248,7 +261,8 @@ return [{
   connectorTypes,
   maxKw,
   connectionCount: connections.length,
-     availabilityStatus: point.StatusType?.Title || 'Status unknown'
+     availabilityStatus: point.StatusType?.Title || 'Unknown',
+availabilityClass: getAvailabilityClass(point.StatusType?.Title),
      }];
   });
 }, [liveChargers, selectedCar, allOperators]);
@@ -256,7 +270,8 @@ return [{
 const filteredChargers = useMemo(() => {
   
   
-    return convertedLiveChargers.filter((charger) => {
+    return convertedLiveChargers
+  .filter((charger) => {
    if (preferences.connectorFilter === 'ccs' && !charger.connectorTypes.includes('CCS')) return false;
 if (preferences.connectorFilter === 'type2' && !charger.connectorTypes.includes('Type 2')) return false;
     if (charger.maxKw < Number(preferences.minimumKw)) return false;
@@ -266,7 +281,15 @@ if (
   !favourites.includes(charger.id)
 )
   return false;
-    return true;
+        return true;
+  })
+  .sort((a, b) => {
+    const aFav = favourites.includes(a.id);
+    const bFav = favourites.includes(b.id);
+
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+    return 0;
   });
 }, [convertedLiveChargers, preferences, favourites]);
 useEffect(() => {
@@ -317,12 +340,9 @@ markerEl.className = isFavourite
     bounds.extend([charger.longitude, charger.latitude]);
   });
 
-  if (markersRef.current.length > 0) {
-    mapRef.current.fitBounds(bounds, {
-      padding: 60,
-      maxZoom: 13
-    });
-  }
+  // Do not auto-fit after manual searches.
+// This was pulling the map back after flyTo().
+
 }, [filteredChargers]);
   function updatePreference(name, value) {
     setPreferences((current) => ({ ...current, [name]: value }));
@@ -353,22 +373,39 @@ function toggleFavourite(chargerId) {
     return next;
   });
 }
-  async function searchLocation() {
- const result = await geocodeWithHere(searchPlace);
+ async function searchLocation() {
+  try {
+    const result = await geocodeWithHere(searchPlace);
 
-setSearchCoords({
-  lat: result.lat,
-  lng: result.lng,
+    setSearchCoords({
+      lat: result.lat,
+      lng: result.lng,
+    });
+
+    setSearchPlace(searchPlace.trim());
+
+    if (mapRef.current) {
+      console.log("About to fly to:", result.lng, result.lat);
+
+      console.log('Before flyTo', mapRef.current.getCenter());
+
+console.log('Before flyTo', mapRef.current.getCenter());
+
+mapRef.current.flyTo({
+  center: [result.lng, result.lat],
+  zoom: 12,
 });
 
-setSearchPlace(result.label);
-
-if (mapRef.current) {
-  mapRef.current.flyTo({
-    center: [result.lng, result.lat],
-    zoom: 12,
-  });
-}
+setTimeout(() => {
+  console.log('After flyTo', mapRef.current.getCenter());
+}, 1000);
+setTimeout(() => {
+  console.log('After flyTo', mapRef.current.getCenter());
+}, 1000);
+    }
+  } catch (error) {
+    console.error("Search failed:", error);
+  }
 }
 
 
@@ -731,7 +768,41 @@ if (showFilters) {
 </div>
 </div>
 
+<div className="selected-provider-list">
+  <h3>Selected providers</h3>
 
+  {preferences.selectedProviders.length === 0 ? (
+    <p>None selected</p>
+  ) : (
+    <div className="selected-provider-chips">
+      {[
+  ...new Set(
+    preferences.selectedProviders.map(
+      (providerId) =>
+        allOperators.find(
+          (operator) => String(operator.id) === String(providerId)
+        )?.name || providerId
+    )
+  ),
+].map((providerName) => (
+        <button
+          key={providerId}
+          type="button"
+          className="selected-provider-chip"
+          onClick={() => toggleProvider(providerId)}
+        >
+          {
+  (
+    allOperators.find(
+      (operator) => String(operator.id) === String(providerId)
+    )?.name || providerId
+  )
+} ×
+        </button>
+      ))}
+    </div>
+  )}
+</div>
  {providerSearch.trim() && (
   <div className="provider-list">
     {(providerSearch.trim() ? allOperators : providers)
@@ -929,7 +1000,9 @@ minWidth: "0",
     <div className="tags">
       <span>{speedLabel(charger.maxKw)}</span>
       <span>{charger.connectorType}</span>
-      <span>{charger.availabilityStatus}</span>
+     <span className={`availability-badge ${charger.availabilityClass || 'unknown'}`}>
+  {charger.availabilityStatus}
+</span>
       <span>
   {charger.connectionCount} connector{charger.connectionCount === 1 ? '' : 's'}
 </span>

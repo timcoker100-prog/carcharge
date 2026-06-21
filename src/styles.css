@@ -104,6 +104,26 @@ input, select {
   border-radius: 999px;
   font-size: 14px;
 }
+
+.tags span.availability-badge.available {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.tags span.availability-badge.busy {
+  background: #fed7aa !important;
+  color: #9a3412 !important;
+}
+
+.tags span.availability-badge.offline {
+  background: #fecaca !important;
+  color: #991b1b !important;
+}
+
+.tags span.availability-badge.unknown {
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+}
 .speed-red { background: #c2410c; }
 .speed-orange { background: #d97706; }
 .speed-yellow { background: #ca8a04; }
@@ -507,4 +527,55 @@ body {
   height: 30px;
   background: #f5b301;
   border: 3px solid white;
+}
+.tags .availability-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tags .availability-badge.available {
+  background: #dff7e5;
+  color: #15803d;
+}
+
+.tags .availability-badge.busy {
+  background: #fff4db;
+  color: #b45309;
+}
+
+.tags .availability-badge.offline {
+  background: #ffe2e2;
+  color: #b91c1c;
+}
+
+.tags .availability-badge.unknown {
+  background: #f1f5f9;
+  color: #64748b;
+
+}
+.selected-provider-list {
+  margin-top: 18px;
+}
+
+.selected-provider-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.selected-provider-chip {
+  background: #e8f3ff;
+  border: 1px solid #c7defc;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.selected-provider-chip:hover {
+  background: #d9ebff;
 }
