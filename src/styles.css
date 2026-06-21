@@ -579,3 +579,13 @@ body {
 .selected-provider-chip:hover {
   background: #d9ebff;
 }
+@media (max-width: 700px) {
+  .search-panel button,
+  .location-buttons button,
+  .tracking-button {
+    font-size: 18px;
+    padding: 14px 18px;
+    min-height: 52px;
+    border-radius: 14px;
+  }
+}

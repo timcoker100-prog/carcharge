@@ -244,10 +244,7 @@ const connectorTypes = [
   )
 ];
 
-console.log(
-  point.AddressInfo?.Title,
-  point.StatusType?.Title
-);
+
 return [{
   id: point.ID,
   name: point.AddressInfo?.Title || 'Charging location',
@@ -261,8 +258,14 @@ return [{
   connectorTypes,
   maxKw,
   connectionCount: connections.length,
-     availabilityStatus: point.StatusType?.Title || 'Unknown',
-availabilityClass: getAvailabilityClass(point.StatusType?.Title),
+     availabilityStatus:
+  point.StatusType?.Title ||
+  connections.find((connection) => connection.StatusType?.Title)?.StatusType?.Title ||
+  'Unknown',
+availabilityClass: getAvailabilityClass(
+  point.StatusType?.Title ||
+  connections.find((connection) => connection.StatusType?.Title)?.StatusType?.Title
+),
      }];
   });
 }, [liveChargers, selectedCar, allOperators]);
@@ -775,34 +778,20 @@ if (showFilters) {
     <p>None selected</p>
   ) : (
     <div className="selected-provider-chips">
-      {[
-  ...new Set(
-    preferences.selectedProviders.map(
-      (providerId) =>
-        allOperators.find(
-          (operator) => String(operator.id) === String(providerId)
-        )?.name || providerId
-    )
-  ),
-].map((providerName) => (
+      {preferences.selectedProviders.map((providerId) => (
         <button
           key={providerId}
           type="button"
           className="selected-provider-chip"
-          onClick={() => toggleProvider(providerId)}
+          onClick={() => toggleProvider(String(providerId))}
         >
-          {
-  (
-    allOperators.find(
-      (operator) => String(operator.id) === String(providerId)
-    )?.name || providerId
-  )
-} ×
+          {providerDisplayName(providerId)} ×
         </button>
       ))}
     </div>
   )}
 </div>
+
  {providerSearch.trim() && (
   <div className="provider-list">
     {(providerSearch.trim() ? allOperators : providers)
@@ -879,7 +868,10 @@ onChange={() => toggleProvider(String(provider.id))}
   <button
     type="button"
     className="instructions-button"
-    onClick={() => setShowFilters(true)}
+    onClick={() => {
+  console.log('Filters clicked');
+  setShowFilters(true);
+}}
   >
     Filters & Providers
   </button>
@@ -946,22 +938,7 @@ minWidth: "0",
     <div className="selected-providers">
   <strong>Preferred networks:</strong>
 
-  {preferences.selectedProviders.length === 0 ? (
-    <p>None selected</p>
-  ) : (
-    <div className="selected-provider-chips">
-      {preferences.selectedProviders.map((providerId) => (
-        <button
-          key={providerId}
-          type="button"
-          className="provider-chip"
-          onClick={() => toggleProvider(String(providerId))}
-        >
-          {providerDisplayName(providerId)} ×
-        </button>
-      ))}
-    </div>
-  )}
+ 
 </div>
           <div className="results-header">
             <h2>{filteredChargers.length} matching chargers near {searchPlace}</h2>
